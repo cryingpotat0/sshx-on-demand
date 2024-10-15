@@ -55,7 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install Rust
-        run: rustup update 1.70 --no-self-update && rustup default 1.70
+        run: rustup update 1.81 --no-self-update && rustup default 1.81
       - name: Install cargo-dist
         run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/axodotdev/cargo-dist/releases/download/v0.0.7/cargo-dist-installer.sh | sh
       - id: create-release
@@ -116,7 +116,7 @@ jobs:
             sudo apt-get install libssl-dev
           windows: choco install openssl
       - name: Install Rust
-        run: rustup update 1.70 --no-self-update && rustup default 1.70
+        run: rustup update 1.81 --no-self-update && rustup default 1.81
       - name: Install cargo-dist
         run: ${{ matrix.install-dist }}
       - name: Run cargo-dist
