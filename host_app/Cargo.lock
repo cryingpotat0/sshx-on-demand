@@ -228,18 +228,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fbf6a919d6cf397374f7dfeeea91d974c7c0a7221d0d0f4f20d859d329e53fcc"
 
 [[package]]
-name = "host_app"
-version = "0.1.0"
-dependencies = [
- "clap",
- "env_logger",
- "libc",
- "log",
- "tokio",
- "unix-named-pipe",
-]
-
-[[package]]
 name = "humantime"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -446,6 +434,18 @@ checksum = "ce305eb0b4296696835b71df73eb912e0f1ffd2556a501fcede6e0c50349191c"
 dependencies = [
  "libc",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "sshx-on-demand"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "env_logger",
+ "libc",
+ "log",
+ "tokio",
+ "unix-named-pipe",
 ]
 
 [[package]]
