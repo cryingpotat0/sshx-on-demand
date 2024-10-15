@@ -1,8 +1,7 @@
 use clap::Parser;
 use env_logger::Env;
 use log::{error, info};
-use std::env;
-use std::fs::{File, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::{Read, Write};
 use std::process::Stdio;
 use std::sync::Arc;
@@ -146,6 +145,7 @@ async fn handle_ping(state: &AppState, args: &Args) {
             }
         }
     }
+    // TODO: should have a way to end a session/ see if it's still active.
 }
 
 async fn run_sshx() -> Result<String, Box<dyn std::error::Error>> {
