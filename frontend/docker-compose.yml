@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  payload:
+    build: .
+    restart: unless-stopped
+    networks:
+      - traefik_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ssh.rule=Host(`ssh.${DOMAIN?:err}`)"
+      - "traefik.http.routers.ssh.service=ssh"
+      - "traefik.http.services.ssh.loadbalancer.server.port=3000"
+      - "traefik.http.routers.ssh.middlewares=authelia"
+      - homepage.name=SSH
+      - homepage.href=https://ssh.${DOMAIN?:err}
+      - homepage.description=SSH
+      - homepage.group=Terminal
+      - homepage.icon=mdi-code
+    volumes:
+      - type: bind
+        source: /tmp/sshx-host-runner-read
+        target: /tmp/sshx-host-runner-read
+      - type: bind
+        source: /tmp/sshx-host-runner-write
+        target: /tmp/sshx-host-runner-write
+networks:
+  traefik_default:
+    external: true
+

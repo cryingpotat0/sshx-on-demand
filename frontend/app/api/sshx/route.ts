@@ -7,6 +7,7 @@ const PIPE_READER_PATH = '/tmp/sshx-host-runner-write';
 
 export async function GET() {
     try {
+        console.log('Reading file from:', PIPE_READER_PATH);
         const responsePromise = fs.readFile(PIPE_READER_PATH, 'utf-8');
         await fs.writeFile(PIPE_WRITER_PATH, 'PING\n');
 

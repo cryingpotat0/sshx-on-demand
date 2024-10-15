@@ -97,6 +97,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                error!("Sleeping: {}", e);
                 sleep(Duration::from_millis(10)).await;
             }
             Err(e) => {

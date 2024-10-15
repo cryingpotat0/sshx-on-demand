@@ -12,3 +12,9 @@ There are two parts:
 It's architected this way so that the Next.JS app can run
 in a Dockerfile independent of the host process.
 
+# Installation
+## Rust binary
+```
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cryingpotat0/sshx-on-demand/releases/download/v0.1.0/sshx-on-demand-installer.sh | sh
+```
+
