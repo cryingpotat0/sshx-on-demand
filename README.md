@@ -19,7 +19,7 @@ nuances with named pipes I don't understand.
 ## Rust binary
 ```
 ## host_app/
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cryingpotat0/sshx-on-demand/releases/download/v0.1.0/sshx-on-demand-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cryingpotat0/sshx-on-demand/releases/latest/sshx-on-demand-installer.sh | sh
 cp sshx-on-demand.service /etc/systemd/system/sshx-on-demand.service
 sudo systemctl daemon-reload
 sudo systemctl start sshx-on-demand
