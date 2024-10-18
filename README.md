@@ -18,6 +18,7 @@ nuances with named pipes I don't understand.
 # Installation
 ## Rust binary
 ```
+## host_app/
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cryingpotat0/sshx-on-demand/releases/download/v0.1.0/sshx-on-demand-installer.sh | sh
 cp sshx-on-demand.service /etc/systemd/system/sshx-on-demand.service
 sudo systemctl daemon-reload
@@ -29,6 +30,9 @@ sudo systemctl status sshx-backend
 
 # Logs
 sudo journalctl -u sshx-backend
+
+## frontend/
+docker-compose up -d
 ```
 
 # Testing
@@ -38,4 +42,16 @@ npm run dev
 
 # host_app/
 cargo run
+```
+
+# Upgrading
+```
+# host_app/
+sudo systemctl stop sshx-on-demand
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cryingpotat0/sshx-on-demand/releases/download/v0.1.0/sshx-on-demand-installer.sh | sh
+
+# frontend/
+# NOTE: You have to do this after so it picks the right named pipe.
+docker-compose down
+docker-compose up -d
 ```
