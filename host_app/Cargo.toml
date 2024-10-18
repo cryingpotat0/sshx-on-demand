@@ -1,6 +1,6 @@
 [package]
 name = "sshx-on-demand"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 repository = "https://github.com/cryingpotat0/sshx-on-demand"
 description = "Enable remote editing on any remote server. Powered by sshx."
