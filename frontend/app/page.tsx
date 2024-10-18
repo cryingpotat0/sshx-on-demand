@@ -32,6 +32,8 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (!sshxUrl) return;
+
     const interval = setInterval(async () => {
         try {
             const response = await fetch('/api/sshx', {
