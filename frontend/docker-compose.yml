@@ -15,8 +15,8 @@ services:
       - homepage.name=SSH
       - homepage.href=https://ssh.${DOMAIN?:err}
       - homepage.description=SSH
-      - homepage.group=Terminal
-      - homepage.icon=mdi-code
+      - homepage.group=Management
+      - homepage.icon=mdi-console
     volumes:
       - type: bind
         source: /tmp/sshx-host-runner-read
