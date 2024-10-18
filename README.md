@@ -57,6 +57,8 @@ curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cryingpotat0/sshx-on-de
 
 # frontend/
 # NOTE: You have to do this after so it picks the right named pipe.
+git pull
 docker-compose down
+docker-compose build
 docker-compose up -d
 ```
