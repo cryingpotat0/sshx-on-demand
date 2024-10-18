@@ -91,7 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if str == "OpenNewConnection" {
                     handle_new_conn_request(&state, &args).await;
                 } else if str == "KeepAlive" {
-                    handle_keepalive_request(&state).await;
+                    handle_keepalive_request(&state, &args).await;
                 } else {
                     error!("Unknown command {:?} flushing buffer", str);
                     // Flush buffer.
@@ -109,10 +109,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
-async fn handle_keepalive_request(state: &Arc<Mutex<AppState>>) {
+async fn handle_keepalive_request(state: &Arc<Mutex<AppState>>, args: &Args) {
     info!("Received KeepAlive request");
     let mut unlocked_state = state.lock().await;
     unlocked_state.last_keepalive = Some(std::time::Instant::now());
+
+    let mut file = match OpenOptions::new()
+        .write(true)
+        .open(args.writer_pipe_path.clone())
+    {
+        Ok(file) => file,
+        Err(e) => {
+            error!("Failed to open named writer pipe: {}", e);
+            return;
+        }
+    };
+
+    if let Err(e) = file.write_all(b"OK") {
+        error!("Failed to write OK to pipe: {}", e);
+    }
 }
 
 async fn handle_new_conn_request(state: &Arc<Mutex<AppState>>, args: &Args) {

@@ -28,21 +28,34 @@ export async function POST(req: NextRequest) {
         const data = await req.text();
         console.log('Request:', data);
         if (['OpenNewConnection', 'KeepAlive'].indexOf(data) === -1) {
+        }
+
+        let response;
+        if (data === 'OpenNewConnection') {
+            console.log('Reading file from:', PIPE_READER_PATH);
+            const responsePromise = fs.readFile(PIPE_READER_PATH, 'utf-8');
+            console.log('Writing to file at:', PIPE_WRITER_PATH);
+            await withTimeout(1000, fs.writeFile(PIPE_WRITER_PATH, data));
+            console.log('Done writing to file at', PIPE_WRITER_PATH);
+
+            response = await withTimeout(1000, responsePromise);
+            console.log('Response:', response);
+            if (!response.startsWith('http')) {
+                throw new Error('Invalid response from host process');
+            }
+        } else if (data === 'KeepAlive') {
+            console.log('Reading file from:', PIPE_READER_PATH);
+            const responsePromise = fs.readFile(PIPE_READER_PATH, 'utf-8');
+            console.log('Writing to file at:', PIPE_WRITER_PATH);
+            await withTimeout(1000, fs.writeFile(PIPE_WRITER_PATH, data));
+            console.log('Done writing to file at', PIPE_WRITER_PATH);
+            response = await withTimeout(1000, responsePromise);
+            console.log('Response:', response);
+        } else {
             throw new Error('Invalid request');
         }
-        console.log('Reading file from:', PIPE_READER_PATH);
-        const responsePromise = fs.readFile(PIPE_READER_PATH, 'utf-8');
-        await withTimeout(1000, fs.writeFile(PIPE_WRITER_PATH, data));
 
-        const response = await withTimeout(1000, responsePromise);
-        console.log('Response:', response);
-
-
-        if (response.startsWith('http')) {
-            return NextResponse.json({ url: response.trim() });
-        } else {
-            throw new Error('Invalid response from host process');
-        }
+        return NextResponse.json({ url: response.trim() });
     } catch (error) {
         console.error('Failed to communicate with host process:', error);
         return NextResponse.json({ error: 'Failed to communicate with host process' }, { status: 500 });
