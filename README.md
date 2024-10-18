@@ -16,10 +16,14 @@ Note: If you're testing on a mac, the docker approach won't work due to
 nuances with named pipes I don't understand.
 
 # Installation
-## Rust binary
 ```
 ## host_app/
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cryingpotat0/sshx-on-demand/releases/latest/sshx-on-demand-installer.sh | sh
+
+# Install binary
+VER=$(curl --silent -qI https://github.com/cryingpotat0/sshx-on-demand/releases/latest | awk -F '/' '/^location/ {print  substr($NF, 1, length($NF)-1)}');
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cryingpotat0/sshx-on-demand/releases/download/$VER/sshx-on-demand-installer.sh | sh
+
+# Setup systemd
 cp sshx-on-demand.service /etc/systemd/system/sshx-on-demand.service
 sudo systemctl daemon-reload
 sudo systemctl start sshx-on-demand
@@ -48,7 +52,8 @@ cargo run
 ```
 # host_app/
 sudo systemctl stop sshx-on-demand
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cryingpotat0/sshx-on-demand/releases/download/v0.1.0/sshx-on-demand-installer.sh | sh
+VER=$(curl --silent -qI https://github.com/cryingpotat0/sshx-on-demand/releases/latest | awk -F '/' '/^location/ {print  substr($NF, 1, length($NF)-1)}');
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cryingpotat0/sshx-on-demand/releases/download/$VER/sshx-on-demand-installer.sh | sh
 
 # frontend/
 # NOTE: You have to do this after so it picks the right named pipe.
