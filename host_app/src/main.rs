@@ -7,12 +7,12 @@ use std::process::Stdio;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio::process::Command;
+use tokio::process::{Child, Command};
 use tokio::sync::Mutex;
 use tokio::time::sleep;
 
 /// Simple program to greet a person
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
 struct Args {
     /// Name of the person to greet
@@ -26,9 +26,9 @@ struct Args {
     idle_timeout_secs: u64,
 }
 
-#[derive(Clone)]
 struct AppState {
-    current_url: Arc<Mutex<Option<String>>>,
+    child: Option<Child>,
+    last_keepalive: Option<std::time::Instant>,
 }
 
 #[tokio::main]
@@ -53,9 +53,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.idle_timeout_secs
     );
 
-    let state = AppState {
-        current_url: Arc::new(Mutex::new(None)),
-    };
+    let state = Arc::new(Mutex::new(AppState {
+        child: None,
+        last_keepalive: None,
+    }));
 
     for pipe_path in [args.reader_pipe_path.clone(), args.writer_pipe_path.clone()].iter() {
         if let Err(e) = std::fs::remove_file(pipe_path) {
@@ -84,13 +85,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         };
 
-        let mut buffer = [0; 4];
-        match file.read_exact(&mut buffer) {
+        let mut str = "".to_string();
+        match file.read_to_string(&mut str) {
             Ok(_) => {
-                if &buffer.to_ascii_uppercase() == b"PING" {
-                    handle_ping(&state, &args).await;
+                if str == "OpenNewConnection" {
+                    handle_new_conn_request(&state, &args).await;
+                } else if str == "KeepAlive" {
+                    handle_keepalive_request(&state).await;
                 } else {
-                    error!("Unknown command {:?} flushing buffer", buffer);
+                    error!("Unknown command {:?} flushing buffer", str);
                     // Flush buffer.
                     file.read_to_end(&mut Vec::new()).unwrap_or_default();
                 }
@@ -106,9 +109,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
-async fn handle_ping(state: &AppState, args: &Args) {
-    info!("Received PING request");
-    let mut url = state.current_url.lock().await;
+async fn handle_keepalive_request(state: &Arc<Mutex<AppState>>) {
+    info!("Received KeepAlive request");
+    let mut unlocked_state = state.lock().await;
+    unlocked_state.last_keepalive = Some(std::time::Instant::now());
+}
+
+async fn handle_new_conn_request(state: &Arc<Mutex<AppState>>, args: &Args) {
+    info!("Received OpenNewConnection request");
 
     let mut file = match OpenOptions::new()
         .read(true)
@@ -122,18 +130,46 @@ async fn handle_ping(state: &AppState, args: &Args) {
         }
     };
 
-    if let Some(existing_url) = url.as_ref() {
-        info!("Returning existing URL: {}", existing_url);
-        if let Err(e) = file.write_all(existing_url.as_bytes()) {
-            error!("Failed to write existing URL to pipe: {}", e);
+    {
+        let mut unlocked_state = state.lock().await;
+        if let Some(mut existing_child) = unlocked_state.child.take() {
+            info!("Killing existing connection");
+            existing_child.kill().await.unwrap();
         }
-        return;
     }
 
     match run_sshx().await {
-        Ok(new_url) => {
-            *url = Some(new_url.clone());
+        Ok((new_url, child)) => {
             info!("New URL found: {}", new_url);
+            {
+                let mut unlocked_state = state.lock().await;
+                unlocked_state.child = Some(child);
+                unlocked_state.last_keepalive = Some(std::time::Instant::now());
+            }
+
+            {
+                let state_clone = state.clone();
+                let idle_timeout_secs = args.idle_timeout_secs;
+                tokio::spawn(async move {
+                    loop {
+                        sleep(Duration::from_secs(60)).await;
+                        {
+                            let mut unlocked_state = state_clone.lock().await;
+
+                            if let Some(last_keepalive) = unlocked_state.last_keepalive {
+                                if last_keepalive.elapsed().as_secs() > idle_timeout_secs {
+                                    info!("Idle timeout reached, killing sshx");
+                                    if let Some(mut existing_child) = unlocked_state.child.take() {
+                                        existing_child.kill().await.unwrap();
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
             if let Err(e) = file.write_all(new_url.as_bytes()) {
                 error!("Failed to write new URL to pipe: {}", e);
             }
@@ -145,10 +181,9 @@ async fn handle_ping(state: &AppState, args: &Args) {
             }
         }
     }
-    // TODO: should have a way to end a session/ see if it's still active.
 }
 
-async fn run_sshx() -> Result<String, Box<dyn std::error::Error>> {
+async fn run_sshx() -> Result<(String, Child), Box<dyn std::error::Error>> {
     info!("Spawning sshx");
     let mut child = Command::new("sshx")
         .arg("-q")
@@ -160,5 +195,5 @@ async fn run_sshx() -> Result<String, Box<dyn std::error::Error>> {
 
     let mut reader = BufReader::new(stdout).lines();
 
-    Ok(reader.next_line().await?.unwrap())
+    Ok((reader.next_line().await?.unwrap(), child))
 }

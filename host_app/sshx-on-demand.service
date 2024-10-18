@@ -1,0 +1,12 @@
+[Unit]
+Description=SSHX Backend Service
+After=network.target
+
+[Service]
+ExecStart=/root/.cargo/bin/sshx-on-demand
+Restart=always
+User=root
+Environment=RUST_LOG=info
+
+[Install]
+WantedBy=multi-user.target
